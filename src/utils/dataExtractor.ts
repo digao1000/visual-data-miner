@@ -1,6 +1,9 @@
 
 import { createWorker } from 'tesseract.js';
-import pdfParse from 'pdf-parse';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set the workerSrc property to use pdf.js worker from CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export interface ExtractedData {
   description: string;
@@ -21,8 +24,21 @@ export const extractFromImage = async (file: File): Promise<ExtractedData[]> => 
 
 export const extractFromPDF = async (file: File): Promise<ExtractedData[]> => {
   const arrayBuffer = await file.arrayBuffer();
-  const data = await pdfParse(arrayBuffer);
-  return parseText(data.text);
+  
+  // Load the PDF using pdf.js
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+  
+  // Extract text from all pages
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item: any) => item.str).join(' ');
+    fullText += pageText + '\n';
+  }
+  
+  return parseText(fullText);
 };
 
 const parseText = (text: string): ExtractedData[] => {
