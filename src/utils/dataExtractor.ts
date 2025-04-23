@@ -27,7 +27,7 @@ export const extractFromImage = async (file: File): Promise<ExtractedData[]> => 
     return parseText(text);
   } catch (error) {
     console.error('Erro ao extrair texto da imagem:', error);
-    throw new Error(`Erro ao processar imagem: ${error.message || 'Erro desconhecido'}`);
+    throw new Error(`Erro ao processar imagem: ${(error as Error).message || 'Erro desconhecido'}`);
   }
 };
 
@@ -56,7 +56,7 @@ export const extractFromPDF = async (file: File): Promise<ExtractedData[]> => {
     return parseText(fullText);
   } catch (error) {
     console.error('Erro ao extrair texto do PDF:', error);
-    throw new Error(`Erro ao processar PDF: ${error.message || 'Erro desconhecido'}`);
+    throw new Error(`Erro ao processar PDF: ${(error as Error).message || 'Erro desconhecido'}`);
   }
 };
 
@@ -67,38 +67,55 @@ const parseText = (text: string): ExtractedData[] => {
   
   const data: ExtractedData[] = [];
   
-  // Expressão regular melhorada para capturar preços no formato brasileiro
-  const priceRegex = /R\$\s*(\d+[.,]\d{2})/g;
+  // Expressões regulares melhoradas para capturar preços no formato brasileiro
+  // Tenta vários formatos comuns de preço
+  const pricePatterns = [
+    /R\$\s*(\d+[.,]\d{2})/g,  // R$ 123,45 ou R$ 123.45
+    /(\d+[.,]\d{2})\s*Un/g,   // 123,45 Un ou 123.45 Un
+    /(\d+[.,]\d{2})/g         // Qualquer número decimal como backup
+  ];
   
   for (const line of lines) {
-    let match;
-    let lastMatch = null;
-    let lastIndex = 0;
+    console.log(`Analisando linha: ${line}`);
     
-    // Encontrar todos os preços na linha
-    while ((match = priceRegex.exec(line)) !== null) {
-      lastMatch = match;
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Se encontrou pelo menos um preço na linha
-    if (lastMatch) {
-      const price = lastMatch[1].replace(',', '.'); // Normaliza o separador decimal
+    // Tenta cada padrão de preço em ordem
+    let found = false;
+    for (const pattern of pricePatterns) {
+      if (found) break;
       
-      // Extrai a descrição considerando apenas o texto antes do preço
-      let description = line.substring(0, lastMatch.index).trim();
-      
-      // Se houver texto após o preço, verifica se é uma descrição melhor
-      if (lastIndex < line.length) {
-        const textAfterPrice = line.substring(lastIndex).trim();
-        if (textAfterPrice.length > description.length) {
-          description = textAfterPrice;
+      pattern.lastIndex = 0; // Reset regex state
+      const matches = [...line.matchAll(pattern)];
+      if (matches.length > 0) {
+        // Pega o último preço na linha como o principal
+        const lastMatch = matches[matches.length - 1];
+        const price = lastMatch[1].replace(',', '.'); // Normaliza o separador decimal
+        
+        // Extrai a descrição
+        const priceIndex = lastMatch.index || 0;
+        const matchLength = lastMatch[0].length;
+        
+        // Primeiro tenta texto antes do preço
+        let description = line.substring(0, priceIndex).trim();
+        
+        // Se não for suficiente, procura por texto após o preço
+        if (description.length < 3) { // Provavelmente não é uma descrição válida
+          const afterPriceIndex = priceIndex + matchLength;
+          if (afterPriceIndex < line.length) {
+            description = line.substring(afterPriceIndex).trim();
+          }
         }
-      }
-      
-      if (description) {
-        data.push({ description, price });
-        console.log(`Item encontrado: "${description}" - R$ ${price}`);
+        
+        // Limpa códigos de barras, números de referência
+        description = description.replace(/^\d+\s+/, '');
+        
+        // Remove parte do preço ou unidade que possa ter sido incluída na descrição
+        description = description.replace(/R\$.*$/, '').replace(/\s+Un\s*$/, '').trim();
+        
+        if (description && description.length > 2) {
+          data.push({ description, price });
+          console.log(`Item encontrado: "${description}" - R$ ${price}`);
+          found = true;
+        }
       }
     }
   }
