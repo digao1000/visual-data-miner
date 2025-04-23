@@ -6,7 +6,15 @@ import { Card } from "@/components/ui/card";
 import { extractFromImage, extractFromPDF, ExtractedData } from '@/utils/dataExtractor';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Table as TableIcon } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Index = () => {
   const [extractedData, setExtractedData] = useState<ExtractedData[]>([]);
@@ -60,7 +68,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
           Extrator de Dados de PDF e Imagens
         </h1>
@@ -71,42 +79,45 @@ const Index = () => {
         />
 
         {isProcessing && (
-          <div className="flex justify-center">
-            <Card className="p-6 flex items-center gap-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span>Processando arquivo... Por favor, aguarde.</span>
-            </Card>
-          </div>
+          <Card className="p-6 flex items-center justify-center gap-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span>Processando arquivo... Por favor, aguarde.</span>
+          </Card>
         )}
 
         {extractedData.length > 0 && !isProcessing && (
           <Card className="p-4 md:p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
-              <h2 className="text-lg md:text-xl font-semibold">
-                Dados Extraídos ({extractedData.length} itens)
-              </h2>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <TableIcon className="h-5 w-5 text-gray-500" />
+                <h2 className="text-lg md:text-xl font-semibold">
+                  Dados Extraídos ({extractedData.length} itens)
+                </h2>
+              </div>
               <Button onClick={exportToCSV}>
                 Exportar CSV
               </Button>
             </div>
             
-            <div className="overflow-auto max-h-96 rounded border">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left p-2 border-b">Descrição</th>
-                    <th className="text-right p-2 border-b">Preço (R$)</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px] font-semibold">Nº</TableHead>
+                    <TableHead className="font-semibold">Descrição</TableHead>
+                    <TableHead className="text-right font-semibold">Preço (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {extractedData.map((item, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="p-2">{item.description}</td>
-                      <td className="text-right p-2">{item.price}</td>
-                    </tr>
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell className="text-right">{item.price}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
         )}
