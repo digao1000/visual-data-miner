@@ -1,6 +1,6 @@
 
 import { createWorker } from 'tesseract.js';
-import * as pdfParse from 'pdf-parse';
+import pdfParse from 'pdf-parse';
 
 export interface ExtractedData {
   description: string;
@@ -21,8 +21,8 @@ export const extractFromImage = async (file: File): Promise<ExtractedData[]> => 
 
 export const extractFromPDF = async (file: File): Promise<ExtractedData[]> => {
   const arrayBuffer = await file.arrayBuffer();
-  const { text } = await pdfParse(arrayBuffer);
-  return parseText(text);
+  const data = await pdfParse(arrayBuffer);
+  return parseText(data.text);
 };
 
 const parseText = (text: string): ExtractedData[] => {
