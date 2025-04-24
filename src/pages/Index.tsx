@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import FileUploader from '@/components/FileUploader';
 import { Button } from "@/components/ui/button";
@@ -15,11 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import TextProcessingOptions from '@/components/TextProcessingOptions';
 
 const Index = () => {
   const [extractedData, setExtractedData] = useState<ExtractedData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [wordsToRemove, setWordsToRemove] = useState<string[]>([]);
 
   const handleFileSelect = async (file: File) => {
     try {
@@ -46,6 +47,15 @@ const Index = () => {
     }
   };
 
+  const processDescription = (description: string): string => {
+    let processedText = description;
+    wordsToRemove.forEach(word => {
+      const regex = new RegExp(word, 'gi');
+      processedText = processedText.replace(regex, '').trim();
+    });
+    return processedText;
+  };
+
   const exportToCSV = () => {
     if (extractedData.length === 0) {
       toast.warning('Não há dados para exportar.');
@@ -54,7 +64,7 @@ const Index = () => {
     
     const csvContent = [
       'Descrição,Preço',
-      ...extractedData.map(item => `"${item.description}","${item.price}"`)
+      ...extractedData.map(item => `"${processDescription(item.description)}","${item.price}"`)
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
@@ -86,40 +96,47 @@ const Index = () => {
         )}
 
         {extractedData.length > 0 && !isProcessing && (
-          <Card className="p-4 md:p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <TableIcon className="h-5 w-5 text-gray-500" />
-                <h2 className="text-lg md:text-xl font-semibold">
-                  Dados Extraídos ({extractedData.length} itens)
-                </h2>
+          <>
+            <Card className="p-4 md:p-6">
+              <h2 className="text-lg font-semibold mb-4">Opções de Processamento</h2>
+              <TextProcessingOptions onWordsChange={setWordsToRemove} />
+            </Card>
+
+            <Card className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <TableIcon className="h-5 w-5 text-gray-500" />
+                  <h2 className="text-lg md:text-xl font-semibold">
+                    Dados Extraídos ({extractedData.length} itens)
+                  </h2>
+                </div>
+                <Button onClick={exportToCSV}>
+                  Exportar CSV
+                </Button>
               </div>
-              <Button onClick={exportToCSV}>
-                Exportar CSV
-              </Button>
-            </div>
-            
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px] font-semibold">Nº</TableHead>
-                    <TableHead className="font-semibold">Descrição</TableHead>
-                    <TableHead className="text-right font-semibold">Preço (R$)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {extractedData.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell className="text-right">{item.price}</TableCell>
+              
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px] font-semibold">Nº</TableHead>
+                      <TableHead className="font-semibold">Descrição</TableHead>
+                      <TableHead className="text-right font-semibold">Preço (R$)</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {extractedData.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell className="text-right">{item.price}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </>
         )}
       </div>
     </div>
