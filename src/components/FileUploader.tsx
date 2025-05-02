@@ -2,7 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileIcon, ImageIcon, Loader2 } from "lucide-react";
+import { FileIcon, ImageIcon, Loader2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 interface FileUploaderProps {
@@ -40,11 +40,18 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, isProcessing 
   }, [onFileSelect]);
 
   const validateFile = (file: File): boolean => {
-    const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+    const validTypes = [
+      'application/pdf', 
+      'image/png', 
+      'image/jpeg', 
+      'image/jpg', 
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
     const maxSize = 10 * 1024 * 1024; // 10MB
     
     if (!validTypes.includes(file.type)) {
-      toast.error('Formato de arquivo não suportado. Por favor, use PDF, PNG ou JPG.');
+      toast.error('Formato de arquivo não suportado. Por favor, use PDF, PNG, JPG ou Excel.');
       return false;
     }
     
@@ -86,9 +93,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, isProcessing 
           <div className="flex gap-2">
             <FileIcon className="w-8 h-8 text-gray-400" />
             <ImageIcon className="w-8 h-8 text-gray-400" />
+            <FileSpreadsheet className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-600">
-            Arraste e solte um arquivo PDF ou imagem aqui, ou
+            Arraste e solte um arquivo PDF, Excel ou imagem aqui, ou
           </p>
           <Button 
             onClick={handleButtonClick}
@@ -108,12 +116,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, isProcessing 
             id="file-upload"
             type="file"
             className="hidden"
-            accept=".pdf,.png,.jpg,.jpeg"
+            accept=".pdf,.png,.jpg,.jpeg,.xls,.xlsx"
             onChange={handleFileChange}
             disabled={isProcessing}
           />
           <p className="text-sm text-gray-500">
-            Suporta PDF, PNG, JPG (max. 10MB)
+            Suporta PDF, Excel, PNG, JPG (max. 10MB)
           </p>
         </div>
       </div>

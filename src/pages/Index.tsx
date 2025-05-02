@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import FileUploader from '@/components/FileUploader';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { extractFromImage, extractFromPDF, ExtractedData } from '@/utils/dataExtractor';
+import { extractFromImage, extractFromPDF, extractFromExcel, ExtractedData } from '@/utils/dataExtractor';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
 import { Loader2, Table as TableIcon } from 'lucide-react';
@@ -28,9 +28,18 @@ const Index = () => {
       setSelectedFile(file);
       toast.info(`Processando arquivo: ${file.name}`);
       
-      const data = file.type.includes('pdf') 
-        ? await extractFromPDF(file)
-        : await extractFromImage(file);
+      let data: ExtractedData[] = [];
+      
+      // Determine file type and use appropriate extractor
+      if (file.type.includes('pdf')) {
+        data = await extractFromPDF(file);
+      } else if (file.type.includes('image')) {
+        data = await extractFromImage(file);
+      } else if (file.type.includes('spreadsheet') || file.type.includes('excel') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        data = await extractFromExcel(file);
+      } else {
+        throw new Error('Tipo de arquivo não suportado');
+      }
       
       if (data.length === 0) {
         toast.warning('Nenhum item foi detectado no arquivo. Tente outro arquivo ou formato.');
@@ -80,7 +89,7 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
-          Extrator de Dados de PDF e Imagens
+          Extrator de Dados de PDF, Excel e Imagens
         </h1>
         
         <FileUploader 

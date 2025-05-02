@@ -1,6 +1,7 @@
 
 import { createWorker } from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
+import * as XLSX from 'xlsx';
 
 // Set the workerSrc property to use pdf.js worker from CDN
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -58,6 +59,108 @@ export const extractFromPDF = async (file: File): Promise<ExtractedData[]> => {
     console.error('Erro ao extrair texto do PDF:', error);
     throw new Error(`Erro ao processar PDF: ${(error as Error).message || 'Erro desconhecido'}`);
   }
+};
+
+export const extractFromExcel = async (file: File): Promise<ExtractedData[]> => {
+  try {
+    console.log('Iniciando extração do Excel:', file.name);
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Load the Excel file
+    console.log('Carregando arquivo Excel...');
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    console.log('Excel carregado, processando planilhas...');
+    
+    // Get the first sheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Convert Excel to JSON
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    console.log(`Convertido ${jsonData.length} linhas para JSON`);
+    
+    // Process the JSON data to match ExtractedData format
+    // Try to find columns related to description and price
+    const extractedData: ExtractedData[] = [];
+    
+    if (jsonData.length > 0) {
+      // Let's see what columns we have available
+      console.log('Analisando colunas disponíveis:', Object.keys(jsonData[0]));
+      
+      // Attempt to identify description and price columns based on common names
+      const possibleDescriptionKeys = ['descricao', 'descrição', 'desc', 'produto', 'product', 'description', 'item', 'nome'];
+      const possiblePriceKeys = ['preco', 'preço', 'price', 'valor', 'value', 'total'];
+      
+      // Try to find the best matching keys for description and price
+      const descKey = findBestMatchingKey(jsonData[0], possibleDescriptionKeys);
+      const priceKey = findBestMatchingKey(jsonData[0], possiblePriceKeys);
+      
+      console.log(`Colunas identificadas - Descrição: ${descKey}, Preço: ${priceKey}`);
+      
+      if (descKey && priceKey) {
+        // We found both description and price columns
+        jsonData.forEach((row: any) => {
+          if (row[descKey] && row[priceKey]) {
+            const description = String(row[descKey]).trim();
+            let price = String(row[priceKey]);
+            
+            // Format price to match expected format
+            if (!isNaN(Number(price))) {
+              // Convert numeric price to string with decimal places
+              price = Number(price).toFixed(2);
+            }
+            
+            extractedData.push({ description, price });
+          }
+        });
+      } else {
+        // If we couldn't identify columns, take the first column as description and second as price
+        jsonData.forEach((row: any) => {
+          const keys = Object.keys(row);
+          if (keys.length >= 2) {
+            const description = String(row[keys[0]]).trim();
+            let price = String(row[keys[1]]);
+            
+            // Format price to match expected format
+            if (!isNaN(Number(price))) {
+              price = Number(price).toFixed(2);
+            }
+            
+            extractedData.push({ description, price });
+          }
+        });
+      }
+    }
+    
+    console.log(`Total de ${extractedData.length} itens extraídos do Excel`);
+    return extractedData;
+  } catch (error) {
+    console.error('Erro ao extrair dados do Excel:', error);
+    throw new Error(`Erro ao processar Excel: ${(error as Error).message || 'Erro desconhecido'}`);
+  }
+};
+
+// Helper function to find the best matching key in an object
+const findBestMatchingKey = (obj: any, possibleKeys: string[]): string | null => {
+  const keys = Object.keys(obj).map(k => k.toLowerCase());
+  
+  // First try exact match
+  for (const possible of possibleKeys) {
+    const match = keys.find(k => k === possible.toLowerCase());
+    if (match) {
+      return Object.keys(obj).find(k => k.toLowerCase() === match) || null;
+    }
+  }
+  
+  // Then try partial match
+  for (const possible of possibleKeys) {
+    const match = keys.find(k => k.includes(possible.toLowerCase()));
+    if (match) {
+      return Object.keys(obj).find(k => k.toLowerCase() === match) || null;
+    }
+  }
+  
+  return null;
 };
 
 const parseText = (text: string): ExtractedData[] => {
