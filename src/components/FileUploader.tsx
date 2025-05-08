@@ -80,32 +80,34 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, isProcessing 
   };
 
   return (
-    <Card className="w-full max-w-2xl p-8">
+    <Card className="w-full max-w-2xl p-6 shadow-lg border-2 transition-all hover:border-primary/20">
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          dragActive ? 'border-primary bg-primary/5' : 'border-gray-300'
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+          dragActive ? 'border-primary bg-primary/5 scale-[0.99]' : 'border-gray-300'
         }`}
       >
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex gap-2">
-            <FileIcon className="w-8 h-8 text-gray-400" />
-            <ImageIcon className="w-8 h-8 text-gray-400" />
-            <FileSpreadsheet className="w-8 h-8 text-gray-400" />
+        <div className="flex flex-col items-center gap-5">
+          <div className="flex gap-3 animate-pulse">
+            <FileIcon className="w-8 h-8 text-blue-400" />
+            <ImageIcon className="w-8 h-8 text-green-400" />
+            <FileSpreadsheet className="w-8 h-8 text-indigo-400" />
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 font-medium">
             Arraste e solte um arquivo PDF, Excel ou imagem aqui, ou
           </p>
           <Button 
             onClick={handleButtonClick}
             disabled={isProcessing}
             type="button"
+            className="px-6 py-2 font-medium transition-all hover:scale-105"
+            size="lg"
           >
             {isProcessing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Processando...
               </>
             ) : (
@@ -120,7 +122,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, isProcessing 
             onChange={handleFileChange}
             disabled={isProcessing}
           />
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 mt-1">
             Suporta PDF, Excel, PNG, JPG (max. 10MB)
           </p>
         </div>

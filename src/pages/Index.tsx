@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import FileUploader from '@/components/FileUploader';
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { extractFromImage, extractFromPDF, extractFromExcel, ExtractedData } from '@/utils/dataExtractor';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
-import { Loader2, Table as TableIcon } from 'lucide-react';
+import { Loader2, Table as TableIcon, Download, FileSpreadsheet } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -86,66 +87,85 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
-          Extrator de Dados de PDF, Excel e Imagens
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="text-center space-y-4 pb-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+            Extrator de Dados
+          </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Extraia facilmente dados de arquivos PDF, Excel e imagens com reconhecimento automático de descrições e preços.
+          </p>
+        </div>
         
-        <FileUploader 
-          onFileSelect={handleFileSelect}
-          isProcessing={isProcessing}
-        />
+        <div className="flex justify-center">
+          <FileUploader 
+            onFileSelect={handleFileSelect}
+            isProcessing={isProcessing}
+          />
+        </div>
 
         {isProcessing && (
-          <Card className="p-6 flex items-center justify-center gap-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span>Processando arquivo... Por favor, aguarde.</span>
+          <Card className="p-6 flex items-center justify-center gap-4 shadow-md animate-pulse bg-white/80 backdrop-blur">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-lg font-medium">Processando arquivo... Por favor, aguarde.</span>
           </Card>
         )}
 
         {extractedData.length > 0 && !isProcessing && (
-          <>
-            <Card className="p-4 md:p-6">
-              <h2 className="text-lg font-semibold mb-4">Opções de Processamento</h2>
-              <TextProcessingOptions onWordsChange={setWordsToRemove} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="col-span-1 shadow-md hover:shadow-lg transition-all h-fit">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                  <FileSpreadsheet className="h-5 w-5" />
+                  Opções de Processamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TextProcessingOptions onWordsChange={setWordsToRemove} />
+              </CardContent>
             </Card>
 
-            <Card className="p-4 md:p-6">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <TableIcon className="h-5 w-5 text-gray-500" />
-                  <h2 className="text-lg md:text-xl font-semibold">
+            <Card className="col-span-1 md:col-span-2 shadow-md hover:shadow-lg transition-all">
+              <CardHeader className="pb-2 border-b">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                  <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                    <TableIcon className="h-5 w-5 text-primary" />
                     Dados Extraídos ({extractedData.length} itens)
-                  </h2>
+                  </CardTitle>
+                  <Button onClick={exportToCSV} className="gap-1 flex items-center">
+                    <Download className="h-4 w-4" />
+                    Exportar CSV
+                  </Button>
                 </div>
-                <Button onClick={exportToCSV}>
-                  Exportar CSV
-                </Button>
-              </div>
+              </CardHeader>
               
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px] font-semibold">Nº</TableHead>
-                      <TableHead className="font-semibold">Descrição</TableHead>
-                      <TableHead className="text-right font-semibold">Preço (R$)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {extractedData.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell className="text-right">{item.price}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <CardContent className="pt-4 pb-2">
+                <div className="rounded-md border overflow-hidden">
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <Table>
+                      <TableHeader className="bg-muted/50 sticky top-0">
+                        <TableRow>
+                          <TableHead className="w-[80px] font-bold text-gray-800">Nº</TableHead>
+                          <TableHead className="font-bold text-gray-800">Descrição</TableHead>
+                          <TableHead className="text-right font-bold text-gray-800 w-[120px]">Preço (R$)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedData.map((item, index) => (
+                          <TableRow key={index} className="hover:bg-muted/30">
+                            <TableCell className="font-medium text-gray-700">{index + 1}</TableCell>
+                            <TableCell className="text-gray-700">{item.description}</TableCell>
+                            <TableCell className="text-right font-semibold text-gray-800">{item.price}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
-          </>
+          </div>
         )}
       </div>
     </div>
